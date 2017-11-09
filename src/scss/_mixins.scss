@@ -1,0 +1,277 @@
+// Rem Calc
+@function calculateRem($size) {
+	$remSize: $size / $mainFontSize;
+	@return #{$remSize}rem;
+}
+
+// Rem Font Size
+@mixin font-size($size) {
+	font-size: $size;
+	font-size: calculateRem($size);
+}
+
+// VW
+@function get-vw($target) { 
+	$vw-context: (1000*.01) * 1px;
+	@return ($target/$vw-context) * 1vw;
+}
+
+@mixin vw($size) {
+	font-size: get-vw($size);
+	@include media-breakpoint-up(xl) {
+		font-size: $size;
+	}
+}
+
+// Media Queries
+@function breakpoint-next($name, $breakpoints: $grid-breakpoints, $breakpoint-names: map-keys($breakpoints)) {
+	$n: index($breakpoint-names, $name);
+	@return if($n < length($breakpoint-names), nth($breakpoint-names, $n + 1), null);
+}
+
+@function breakpoint-min($name, $breakpoints: $grid-breakpoints) {
+	$min: map-get($breakpoints, $name);
+	@return if($min != 0, $min, null);
+}
+
+@function breakpoint-max($name, $breakpoints: $grid-breakpoints) {
+	$next: breakpoint-next($name, $breakpoints);
+	@return if($next, breakpoint-min($next, $breakpoints) - 1px, null);
+}
+
+@function breakpoint-infix($name, $breakpoints: $grid-breakpoints) {
+	@return if(breakpoint-min($name, $breakpoints) == null, "", "-#{$name}");
+}
+
+@mixin media-breakpoint-up($name, $breakpoints: $grid-breakpoints) {
+	$min: breakpoint-min($name, $breakpoints);
+	@if $min {
+		@media (min-width: $min) {
+			@content;
+		}
+	} @else {
+		@content;
+	}
+}
+
+@mixin media-breakpoint-down($name, $breakpoints: $grid-breakpoints) {
+	$max: breakpoint-max($name, $breakpoints);
+	@if $max {
+		@media (max-width: $max) {
+			@content;
+		}
+	} @else {
+		@content;
+	}
+}
+
+@mixin media-breakpoint-between($lower, $upper, $breakpoints: $grid-breakpoints) {
+	@include media-breakpoint-up($lower, $breakpoints) {
+		@include media-breakpoint-down($upper, $breakpoints) {
+			@content;
+		}
+	}
+}
+
+@mixin media-breakpoint-only($name, $breakpoints: $grid-breakpoints) {
+	@include media-breakpoint-between($name, $name, $breakpoints) {
+		@content;
+	}
+}
+
+// Retina Display
+@mixin img-retina($file, $type, $width, $height) {
+	background: url(#{$imagePath}#{$file}.#{$type}) no-repeat 0 0;
+
+	@media
+	only screen and (min-resolution: 192dpi),
+	only screen and (min-resolution: 2dppx) {
+		background: {
+			image: url(#{$imagePath}#{$file}@2x.#{$type});
+			size: $width $height;
+		}
+	}
+}
+
+// Ellipsis
+@mixin ellipsis($max-width: 100%){
+	max-width: $max-width;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+// Container
+@mixin make-container() {
+	@if variable-exists(grid-gutter-widths) {
+		@each $breakpoint in map-keys($grid-gutter-widths) {
+			@include media-breakpoint-up($breakpoint) {
+				$gutter: map-get($grid-gutter-widths, $breakpoint);
+				padding: {
+					left: ($gutter / 2);
+					right: ($gutter / 2);
+				}
+			}
+		}
+	} @else {
+		padding: {
+			left: ($grid-gutter-width-base / 2);
+			right: ($grid-gutter-width-base / 2);
+		}
+	}
+}
+
+// Center
+@mixin make-center($max-widths: $container-max-widths, $breakpoints: $grid-breakpoints) {
+	$length: length($max-widths);
+	margin: 0 auto;
+	@each $breakpoint, $container-max-width in $max-widths {
+		@if $length > 1 {
+			@include media-breakpoint-up($breakpoint, $breakpoints) {
+				max-width: $container-max-width;
+			}
+		} @else {
+			max-width: $container-max-width;
+		}
+	}
+}
+
+// Multi Center
+@mixin multi-center() {
+	margin: 0 auto;
+	@each $size, $max-width in $container-max-widths {
+		&.#{$size} {
+			max-width: $max-width;
+		}
+	}
+}
+
+// Make Columns
+@mixin make-grid-columns($columns: $grid-columns, $breakpoints: $grid-breakpoints) {
+	.column {
+		max-width: 100%;
+		width: 100%;
+		@include make-gutters();
+
+		.flex-children & {
+			display: flex;
+		}
+		
+		&-box {
+			width: 100%;
+		}
+	}
+	@each $breakpoint in map-keys($breakpoints) {
+		$infix: breakpoint-infix($breakpoint, $breakpoints);
+
+		@include media-breakpoint-up($breakpoint, $breakpoints) {
+			.col#{$infix} {
+				flex: {
+					basis: 0;
+					grow: 1;
+				}
+			}
+			.col#{$infix}-auto {
+				flex: 0 0 auto;
+				width: auto;
+			}
+
+			@for $i from 1 through $columns {
+				.col#{$infix}-#{$i} {
+					@include make-col($i, $columns);
+				}
+			}
+
+			@each $modifier in (pull, push) {
+				@for $i from 0 through $columns {
+					.#{$modifier}#{$infix}-#{$i} {
+						@include make-col-modifier($modifier, $i, $columns);
+					}
+				}
+			}
+
+			@for $i from 0 through ($columns - 1) {
+				@if not ($infix == "" and $i == 0) {
+					.offset#{$infix}-#{$i} {
+						@include make-col-modifier(offset, $i, $columns);
+					}
+				}
+			}
+			.offset-left#{$infix}-auto {
+				margin-left: auto;
+			}
+			.offset-right#{$infix}-auto {
+				margin-right: auto;
+			}
+		}
+	}
+}
+
+// Grid system
+@mixin make-gutters() {
+	@if variable-exists(grid-gutter-widths) {
+		@each $breakpoint in map-keys($grid-gutter-widths) {
+			@include media-breakpoint-up($breakpoint) {
+				$gutter: map-get($grid-gutter-widths, $breakpoint);
+				padding: {
+					left: ($gutter / 2);
+					right: ($gutter / 2);
+				}
+			}
+		}
+	} @else {
+		padding: {
+			left: ($grid-gutter-width-base / 2);
+			right: ($grid-gutter-width-base / 2);
+		}
+	}
+}
+
+@mixin make-row() {
+	display: flex;
+	flex-wrap: wrap;
+
+	@if variable-exists(grid-gutter-widths) {
+		@each $breakpoint in map-keys($grid-gutter-widths) {
+			@include media-breakpoint-up($breakpoint) {
+				$gutter: map-get($grid-gutter-widths, $breakpoint);
+				margin: {
+					left: ($gutter / -2);
+					right: ($gutter / -2);
+				}
+			}
+		}
+	} @else {
+		margin: {
+			left: ($grid-gutter-width-base / -2);
+			right: ($grid-gutter-width-base / -2);
+		}
+	}
+}
+
+@mixin make-col($size, $columns: $grid-columns) {
+	flex: 0 0 percentage($size / $columns);
+	max-width: percentage($size / $columns);
+}
+
+@mixin make-col-offset($size, $columns: $grid-columns) {
+	margin-left: percentage($size / $columns);
+}
+
+@mixin make-col-push($size, $columns: $grid-columns) {
+	left: if($size > 0, percentage($size / $columns), auto);
+}
+
+@mixin make-col-pull($size, $columns: $grid-columns) {
+	right: if($size > 0, percentage($size / $columns), auto);
+}
+
+@mixin make-col-modifier($type, $size, $columns) {
+	@if $type == push {
+		@include make-col-push($size, $columns);
+	} @else if $type == pull {
+		@include make-col-pull($size, $columns);
+	} @else if $type == offset {
+		@include make-col-offset($size, $columns);
+	}
+}

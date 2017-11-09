@@ -1,0 +1,42 @@
+// Main Colors
+$white: #fff;
+$black: #000;
+
+// Font Size
+$mainFontSize: 16px;
+
+// Font Weight
+$light: 200;
+$normal: 400;
+$bold: 700;
+$bolder: 800;
+
+// Font Family
+$mainFont: sans-serif;
+
+// Content width
+$container-max-widths: (
+	xl: 1300px
+);
+
+$paddingWidth: 20px;
+
+// Break Points
+$grid-breakpoints: (
+	xs: 0,
+	sm: 576px,
+	md: 768px,
+	lg: 992px,
+	xl: 1200px
+);
+
+// Columns
+$grid-columns: 12;
+$grid-gutter-width-base: 20px;
+
+// Transition Time and Ease
+$time: .3s ease-in-out;
+$all: all $time;
+
+// Image path
+$imagePath: '../img/';

@@ -1,0 +1,51 @@
+@import 'variables';
+@import 'mixins';
+@import 'cssTop';
+
+// Flex Classes
+@import 'flex';
+
+@if variable-exists(grid-columns) {
+	// Columns
+	.container {
+		@include make-container;
+	}
+
+	.row {
+		@include make-row;
+	}
+	.no-gutters {
+		margin: {
+			left: 0;
+			right: 0;
+		}
+
+		> .col {
+			padding: {
+				left: 0;
+				right: 0;
+			}
+		}
+	}
+
+	@include make-grid-columns;
+}
+
+/*
+* Global Styles
+*/
+.center {
+	@include make-center;
+}
+
+/* Fonts */
+#{headings()},
+p {
+	margin: 0;
+}
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+@import 'cssBottom';
